@@ -1,0 +1,21 @@
+States: p1,p2,p3,p4,p5,p6,p7,p8
+Symbols: 0,1
+Accepting states: p3
+Initial state: p1
+Transitions:
+p1,0->p2
+p1,1->p6
+p2,0->p7
+p2,1->p3
+p3,0->p1
+p3,1->p3
+p4,0->p3
+p4,1->p7
+p5,0->p8
+p5,1->p6
+p6,0->p3
+p6,1->p7
+p7,0->p7
+p7,1->p5
+p8,0->p7
+p8,1->p3
