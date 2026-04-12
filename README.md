@@ -20,7 +20,7 @@ same format.
 input.txt
 ```
 
-The file input.txt contains textual DFA definition.
+The file [input.txt](lab01/input.txt) contains textual DFA definition.
 Example of a textual DFA definition (the format can be different in your solution):
 
 ```
@@ -82,5 +82,43 @@ choice (it could be similar to the DFA definition format above), along with an i
 which should be processed by the DPDA.
 The simulator should output, for each input symbol, the correponding active state of the
 DPDA. At the end, it should output whether the input string is accepted.
+
+### Example Input
+
+```
+input.txt
+```
+
+The file [input.txt](lab02/input.txt) contains textual DPDA definition.
+Example of a textual DPDA definition (the format can be different in your solution):
+
+```
+States: q0,q1,q2
+Input symbols: a,b
+Stack symbols: Z,A
+Accepting states: q2
+Initial state: q0
+Initial stack symbol: Z
+Input string: aabb
+Transitions:
+q0,a,Z->q0,AZ
+q0,a,A->q0,AA
+q0,b,A->q1,eps
+q1,b,A->q1,eps
+q1,eps,Z->q2,Z
+```
+
+### Example Output
+
+The executable program should print the required result. An example of program output for the above input:
+
+```
+Input string: aabb
+a -> q0
+a -> q0
+b -> q1
+b -> q2
+Accepted: yes
+```
 
 Problem solution: [lab02.py](lab02/lab02.py)
