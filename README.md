@@ -67,4 +67,20 @@ Transitions:
 {p6,p7},d->{p1,p2}
 ```
 
-Problem solution: [lab01.py](lab01.py)
+Problem solution: [lab01.py](lab01/lab01.py)
+
+---
+
+## Lab 2
+
+### Problem
+
+In a programming language of your choice, implement a simulator of a Deterministic
+Pushdown Automaton (DPDA).
+The input to your program should be a textual definition of a DPDA, given in a format of your
+choice (it could be similar to the DFA definition format above), along with an input string
+which should be processed by the DPDA.
+The simulator should output, for each input symbol, the correponding active state of the
+DPDA. At the end, it should output whether the input string is accepted.
+
+Problem solution: [lab02.py](lab02/lab02.py)
