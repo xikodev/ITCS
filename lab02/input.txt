@@ -1,0 +1,13 @@
+States: q0,q1,q2
+Input symbols: a,b
+Stack symbols: Z,A
+Accepting states: q2
+Initial state: q0
+Initial stack symbol: Z
+Input string: aabb
+Transitions:
+q0,a,Z->q0,AZ
+q0,a,A->q0,AA
+q0,b,A->q1,eps
+q1,b,A->q1,eps
+q1,eps,Z->q2,Z
