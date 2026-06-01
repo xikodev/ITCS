@@ -13,136 +13,73 @@ class DPDA:
         self.transitions = {}
 
 
-def parse_csv(text: str):
-    items = []
-
+def split_items(text):
+    result = []
     for part in text.split(","):
-        cleaned = part.strip()
-        if cleaned:
-            items.append(cleaned)
-
-    return items
-
-
-def parse_input_string(text: str):
-    cleaned = text.strip()
-
-    if not cleaned:
-        return []
-
-    if "," in cleaned:
-        return parse_csv(cleaned)
-
-    return list(cleaned)
+        part = part.strip()
+        if part:
+            result.append(part)
+    return result
 
 
-def parse_transition(line: str):
-    left, right = line.split("->")
-    source_parts = [part.strip() for part in left.split(",")]
-    target_parts = [part.strip() for part in right.split(",")]
-
-    if len(source_parts) != 3:
-        raise ValueError(f"Invalid transition source: {line}")
-    if len(target_parts) != 2:
-        raise ValueError(f"Invalid transition target: {line}")
-
-    state, input_symbol, stack_top = source_parts
-    next_state, push_value = target_parts
-    return state, input_symbol, stack_top, next_state, push_value
-
-
-def normalize_symbol(symbol: str):
-    if symbol in {"eps", "epsilon", "ε"}:
+def normalize_symbol(symbol):
+    if symbol in ("eps", "epsilon", "Îµ", "ε"):
         return ""
     return symbol
 
 
-def validate_dpda(dpda: DPDA):
-    if not dpda.states:
-        raise ValueError("Missing states.")
-    if not dpda.stack_symbols:
-        raise ValueError("Missing stack symbols.")
-    if dpda.initial_state is None:
-        raise ValueError("Missing initial state.")
-    if dpda.initial_stack_symbol is None:
-        raise ValueError("Missing initial stack symbol.")
-
-    state_set = set(dpda.states)
-    input_symbol_set = set(dpda.input_symbols)
-    stack_symbol_set = set(dpda.stack_symbols)
-
-    if dpda.initial_state not in state_set:
-        raise ValueError("Initial state is not listed in states.")
-    if dpda.initial_stack_symbol not in stack_symbol_set:
-        raise ValueError("Initial stack symbol is not listed in stack symbols.")
-    if not dpda.accepting_states.issubset(state_set):
-        raise ValueError("Accepting states must be listed in states.")
-
-    for symbol in dpda.input_string:
-        if symbol not in input_symbol_set:
-            raise ValueError(f"Input symbol '{symbol}' is not listed in input symbols.")
-
-    for (state, input_symbol, stack_top), (next_state, push_value) in dpda.transitions.items():
-        if state not in state_set:
-            raise ValueError(f"Unknown source state '{state}'.")
-        if next_state not in state_set:
-            raise ValueError(f"Unknown target state '{next_state}'.")
-        if input_symbol and input_symbol not in input_symbol_set:
-            raise ValueError(f"Unknown input symbol '{input_symbol}' in transitions.")
-        if stack_top not in stack_symbol_set:
-            raise ValueError(f"Unknown stack symbol '{stack_top}' in transitions.")
-
-        for symbol in push_value:
-            if symbol not in stack_symbol_set:
-                raise ValueError(f"Unknown stack symbol '{symbol}' in push value.")
-
-
-def parse_dpda_from_file(filename: str):
+def parse_dpda_from_file(filename):
     dpda = DPDA()
 
     with open(filename, "r", encoding="utf-8") as file:
-        lines = []
-
-        for line in file:
-            cleaned = line.strip()
-            if cleaned:
-                lines.append(cleaned)
+        lines = [line.strip() for line in file if line.strip()]
 
     reading_transitions = False
 
     for line in lines:
-        if reading_transitions:
-            state, input_symbol, stack_top, next_state, push_value = parse_transition(line)
-            key = (state, normalize_symbol(input_symbol), stack_top)
-
-            if key in dpda.transitions:
-                raise ValueError(f"Non-deterministic transition duplicated for {key}.")
-
-            dpda.transitions[key] = (next_state, normalize_symbol(push_value))
+        if line == "Transitions:":
+            reading_transitions = True
             continue
 
-        if line.startswith("States:"):
-            dpda.states = parse_csv(line[len("States:"):])
-        elif line.startswith("Input symbols:"):
-            dpda.input_symbols = parse_csv(line[len("Input symbols:"):])
-        elif line.startswith("Stack symbols:"):
-            dpda.stack_symbols = parse_csv(line[len("Stack symbols:"):])
-        elif line.startswith("Accepting states:"):
-            dpda.accepting_states = set(parse_csv(line[len("Accepting states:"):]))
-        elif line.startswith("Initial state:"):
-            dpda.initial_state = line[len("Initial state:"):].strip()
-        elif line.startswith("Initial stack symbol:"):
-            dpda.initial_stack_symbol = line[len("Initial stack symbol:"):].strip()
-        elif line.startswith("Input string:"):
-            dpda.input_string = parse_input_string(line[len("Input string:"):])
-        elif line == "Transitions:":
-            reading_transitions = True
+        if not reading_transitions:
+            if line.startswith("States:"):
+                dpda.states = split_items(line[len("States:"):])
+            elif line.startswith("Input symbols:"):
+                dpda.input_symbols = split_items(line[len("Input symbols:"):])
+            elif line.startswith("Stack symbols:"):
+                dpda.stack_symbols = split_items(line[len("Stack symbols:"):])
+            elif line.startswith("Accepting states:"):
+                dpda.accepting_states = set(split_items(line[len("Accepting states:"):]))
+            elif line.startswith("Initial state:"):
+                dpda.initial_state = line[len("Initial state:"):].strip()
+            elif line.startswith("Initial stack symbol:"):
+                dpda.initial_stack_symbol = line[len("Initial stack symbol:"):].strip()
+            elif line.startswith("Input string:"):
+                text = line[len("Input string:"):].strip()
+                if text == "":
+                    dpda.input_string = []
+                elif "," in text:
+                    dpda.input_string = split_items(text)
+                else:
+                    dpda.input_string = list(text)
+            continue
 
-    validate_dpda(dpda)
+        left, right = line.split("->")
+        left_parts = [part.strip() for part in left.split(",")]
+        right_parts = [part.strip() for part in right.split(",")]
+
+        state = left_parts[0]
+        input_symbol = normalize_symbol(left_parts[1])
+        stack_top = left_parts[2]
+        next_state = right_parts[0]
+        push_value = normalize_symbol(right_parts[1])
+
+        dpda.transitions[(state, input_symbol, stack_top)] = (next_state, push_value)
+
     return dpda
 
 
-def apply_transition(stack, push_value: str):
+def apply_transition(stack, push_value):
     if push_value == "":
         return
 
@@ -150,7 +87,7 @@ def apply_transition(stack, push_value: str):
         stack.append(symbol)
 
 
-def run_epsilon_transitions(dpda: DPDA, state: str, stack):
+def run_epsilon_transitions(dpda, state, stack):
     visited = set()
 
     while True:
@@ -171,7 +108,7 @@ def run_epsilon_transitions(dpda: DPDA, state: str, stack):
         state = next_state
 
 
-def simulate_dpda(dpda: DPDA):
+def simulate_dpda(dpda):
     stack = [dpda.initial_stack_symbol]
     state = dpda.initial_state
     visited_states = []
@@ -197,12 +134,14 @@ def simulate_dpda(dpda: DPDA):
         visited_states.append(state)
 
     state = run_epsilon_transitions(dpda, state, stack)
-    accepted = state in dpda.accepting_states
-    return visited_states, accepted
+    return visited_states, state in dpda.accepting_states
 
 
-def print_simulation(dpda: DPDA, visited_states, accepted: bool):
-    printable_input = "".join(dpda.input_string) if dpda.input_string else "eps"
+def print_simulation(dpda, visited_states, accepted):
+    if dpda.input_string:
+        printable_input = "".join(dpda.input_string)
+    else:
+        printable_input = "eps"
 
     print("Input string: " + printable_input)
 
@@ -212,7 +151,10 @@ def print_simulation(dpda: DPDA, visited_states, accepted: bool):
     else:
         print("No input symbols were consumed.")
 
-    print("Accepted: " + ("yes" if accepted else "no"))
+    if accepted:
+        print("Accepted: yes")
+    else:
+        print("Accepted: no")
 
 
 def main():
@@ -229,19 +171,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# Expected input format:
-# States: q0,q1,q2
-# Input symbols: a,b
-# Stack symbols: Z,A
-# Accepting states: q2
-# Initial state: q0
-# Initial stack symbol: Z
-# Input string: aabb
-# Transitions:
-# q0,a,Z->q0,AZ
-# q0,a,A->q0,AA
-# q0,b,A->q1,eps
-# q1,b,A->q1,eps
-# q1,eps,Z->q2,Z
